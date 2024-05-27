@@ -438,7 +438,7 @@ class _TtsState extends State<Tts> {
                           child: ElevatedButton(
                             style: ButtonStyle(
                               backgroundColor:
-                                  MaterialStateProperty.all<Color>(bgColor),
+                                  WidgetStateProperty.all<Color>(bgColor),
                             ),
                             child: const Text('Stop Speaking',
                                 style: TextStyle(color: Colors.white)),
@@ -455,7 +455,7 @@ class _TtsState extends State<Tts> {
                             child: ElevatedButton(
                               style: ButtonStyle(
                                 backgroundColor:
-                                    MaterialStateProperty.all<Color>(bgColor),
+                                    WidgetStateProperty.all<Color>(bgColor),
                               ),
                               child: const Text('Pause',
                                   style: TextStyle(color: Colors.white)),
@@ -472,7 +472,7 @@ class _TtsState extends State<Tts> {
                             child: ElevatedButton(
                               style: ButtonStyle(
                                 backgroundColor:
-                                    MaterialStateProperty.all<Color>(bgColor),
+                                    WidgetStateProperty.all<Color>(bgColor),
                               ),
                               child: const Text('Resume',
                                   style: TextStyle(color: Colors.white)),
@@ -486,7 +486,7 @@ class _TtsState extends State<Tts> {
                           child: ElevatedButton(
                         style: ButtonStyle(
                           backgroundColor:
-                              MaterialStateProperty.all<Color>(bgColor),
+                              WidgetStateProperty.all<Color>(bgColor),
                         ),
                         child: const Text('Speak',
                             style: TextStyle(color: Colors.white)),
@@ -504,7 +504,7 @@ class _TtsState extends State<Tts> {
                       Expanded(
                         child: ElevatedButton(
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(
+                            backgroundColor: WidgetStateProperty.all<Color>(
                                 isListening ? Colors.red : bgColor),
                           ),
                           child: Text(
@@ -523,7 +523,7 @@ class _TtsState extends State<Tts> {
                       Expanded(
                         child: ElevatedButton(
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(
+                            backgroundColor: WidgetStateProperty.all<Color>(
                                 _isCommandMode ? Colors.red : bgColor),
                           ),
                           child: Text(
