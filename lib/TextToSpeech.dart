@@ -34,6 +34,8 @@ class _TtsState extends State<Tts> {
   String? voice;
 
   final TextEditingController textEditingController = TextEditingController();
+  final List<String> logMessages = [];
+  final Set<String> uniqueCommands = {};
 
   bool get supportPause => defaultTargetPlatform != TargetPlatform.android;
   bool get supportResume => defaultTargetPlatform != TargetPlatform.android;
@@ -69,7 +71,7 @@ class _TtsState extends State<Tts> {
         setState(() {});
       }
     } catch (e) {
-      print('Error initializing languages: $e');
+      addLog('Error initializing languages: $e');
     }
   }
 
@@ -80,7 +82,7 @@ class _TtsState extends State<Tts> {
         return voices.first;
       }
     } catch (e) {
-      print('Error getting voice by language: $e');
+      addLog('Error getting voice by language: $e');
     }
     return null;
   }
@@ -88,11 +90,11 @@ class _TtsState extends State<Tts> {
   void initializeSpeechRecognition() async {
     try {
       await speech.initialize(
-        onStatus: (val) => print('onStatus: $val'),
-        onError: (val) => print('onError: $val'),
+        onStatus: (val) => addLog('onStatus: $val'),
+        onError: (val) => addLog('onError: $val'),
       );
     } catch (e) {
-      print('Error initializing speech recognition: $e');
+      addLog('Error initializing speech recognition: $e');
     }
   }
 
@@ -103,7 +105,7 @@ class _TtsState extends State<Tts> {
     speech.listen(
       onResult: (val) {
         String recognizedText = val.recognizedWords.toLowerCase();
-        print('Command: $recognizedText');
+        addLog('Command: $recognizedText');
         handleVoiceCommand(recognizedText);
       },
       localeId: 'in-ID',
@@ -111,63 +113,80 @@ class _TtsState extends State<Tts> {
   }
 
   void handleVoiceCommand(String recognizedText) async {
-    print('Recognized text: $recognizedText');
+    addLog('Recognized text: $recognizedText');
 
-    if (recognizedText.contains('bicara')) {
-      print('Executing: speak()');
-      // Debug print to check text value
-      print('Text before speaking: $text');
-      setState(() {
-        if (textEditingController.text.isNotEmpty) {
-          speak();
-        } else {
-          print('No text to speak');
+    if (!uniqueCommands.contains(recognizedText)) {
+      uniqueCommands.add(recognizedText);
+
+      // Normalize recognized text
+      recognizedText = recognizedText.toLowerCase();
+
+      if (recognizedText.contains('bicara')) {
+        addLog('Executing: speak()');
+        setState(() {
+          if (textEditingController.text.isNotEmpty) {
+            speak();
+          } else {
+            addLog('No text to speak');
+          }
+        });
+      } else if (recognizedText.contains('berhenti')) {
+        addLog('Executing: tts.stop()');
+        tts.stop();
+      } else if (recognizedText.contains('jeda')) {
+        if (supportPause) {
+          addLog('Executing: tts.pause()');
+          tts.pause();
         }
-      });
-    } else if (recognizedText.contains('berhenti')) {
-      print('Executing: tts.stop()');
-      tts.stop();
-    } else if (recognizedText.contains('jeda')) {
-      if (supportPause) {
-        print('Executing: tts.pause()');
-        tts.pause();
+      } else if (recognizedText.contains('lanjutkan')) {
+        if (supportResume) {
+          addLog('Executing: tts.resume()');
+          tts.resume();
+        }
+      } else if (recognizedText.contains('reset volume')) {
+        double newVolume = extractValue(recognizedText);
+        if (newVolume >= 0 && newVolume <= 1) {
+          setState(() {
+            volume = newVolume;
+          });
+          addLog('Volume set to $volume');
+        } else {
+          addLog('Invalid volume value');
+        }
+      } else if (recognizedText.contains('reset pic')) {
+        double newPitch = extractValue(recognizedText);
+        if (newPitch >= 0 && newPitch <= 2) {
+          setState(() {
+            pitch = newPitch;
+          });
+          addLog('Pitch set to $pitch');
+        } else {
+          addLog('Invalid pitch value');
+        }
+      } else if (recognizedText.contains('reset rate')) {
+        // corrected the command from "reset red" to "reset rate"
+        double newRate = extractValue(recognizedText);
+        if (newRate >= 0 && newRate <= 2) {
+          setState(() {
+            rate = newRate;
+          });
+          addLog('Rate set to $rate');
+        } else {
+          addLog('Invalid rate value');
+        }
       }
-    } else if (recognizedText.contains('lanjutkan')) {
-      if (supportResume) {
-        print('Executing: tts.resume()');
-        tts.resume();
-      }
-    } else if (recognizedText.contains('riset volume')) {
-      double newVolume = extractValue(recognizedText);
-      if (newVolume >= 0 && newVolume <= 1) {
-        setState(() {
-          volume = newVolume;
-        });
-      }
-    } else if (recognizedText.contains('riset pic')) {
-      double newPitch = extractValue(recognizedText);
-      if (newPitch >= 0 && newPitch <= 2) {
-        setState(() {
-          pitch = newPitch;
-        });
-      }
-    } else if (recognizedText.contains('reset red')) {
-      double newRate = extractValue(recognizedText);
-      if (newRate >= 0 && newRate <= 2) {
-        setState(() {
-          rate = newRate;
-        });
-      }
-    }
 
-    // Reset text after command
-    _resetTextTimer?.cancel();
-    _resetTextTimer = Timer(Duration(seconds: 2), () {
-      setState(() {
-        textEditingController.text =
-            text; // Update text field with current text
+      // Reset text after command
+      _resetTextTimer?.cancel();
+      _resetTextTimer = Timer(Duration(seconds: 2), () {
+        setState(() {
+          textEditingController.text =
+              text; // Update text field with current text
+        });
       });
-    });
+    } else {
+      addLog('Command already executed: $recognizedText');
+    }
   }
 
   double extractValue(String text) {
@@ -191,8 +210,8 @@ class _TtsState extends State<Tts> {
   void startListening() async {
     try {
       bool available = await speech.initialize(
-        onStatus: (val) => print('onStatus: $val'),
-        onError: (val) => print('onError: $val'),
+        onStatus: (val) => addLog('onStatus: $val'),
+        onError: (val) => addLog('onError: $val'),
       );
       if (available) {
         setState(() {
@@ -215,7 +234,7 @@ class _TtsState extends State<Tts> {
         });
       }
     } catch (e) {
-      print('Error initializing speech recognition: $e');
+      addLog('Error initializing speech recognition: $e');
       setState(() {
         isListening = false;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -240,18 +259,30 @@ class _TtsState extends State<Tts> {
     }
     tts.setPitch(pitch);
 
-    // Debug print statements
-    print('Volume: $volume');
-    print('Rate: $rate');
-    print('Pitch: $pitch');
-    print('Language: $languageCode');
-    print('Text to speak: $text');
+    addLog('Volume: $volume');
+    addLog('Rate: $rate');
+    addLog('Pitch: $pitch');
+    addLog('Language: $languageCode');
+    addLog('Text to speak: $text');
 
-    // Check if text is not empty before speaking
     if (text.isNotEmpty) {
       tts.speak(text);
     } else {
-      print('No text to speak');
+      addLog('No text to speak');
+    }
+  }
+
+  void addLog(String message) {
+    setState(() {
+      if (logMessages.isEmpty || logMessages.last != message) {
+        if (logMessages.length >= 5) {
+          logMessages.removeAt(0);
+        }
+        logMessages.add(message);
+      }
+    });
+    if (kDebugMode) {
+      print(message);
     }
   }
 
@@ -261,7 +292,8 @@ class _TtsState extends State<Tts> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Text-to-Speech & Speech-to-Text',
+          title: const Text(
+              'Text-to-Speech, Speech-to-Text & Speech Recognition',
               style: TextStyle(color: Colors.white)),
           backgroundColor: bgColor,
         ),
@@ -276,17 +308,16 @@ class _TtsState extends State<Tts> {
                     maxLines: 5,
                     cursorColor: bgColor,
                     decoration: InputDecoration(
-                      border: const OutlineInputBorder(
-                        borderSide: BorderSide(),
-                      ),
+                      border: const OutlineInputBorder(),
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: bgColor),
                       ),
+                      labelText: 'Enter Text',
+                      labelStyle: TextStyle(color: bgColor),
                     ),
                     onChanged: (String newText) {
                       setState(() {
                         text = newText;
-                        print('Updated text: $text');
                       });
                     },
                   ),
@@ -521,11 +552,34 @@ class _TtsState extends State<Tts> {
                       const SizedBox(width: 10),
                       Text(
                         _isCommandMode
-                            ? 'Command Mode Active'
+                            ? 'Command Mode Active: Use phrases like "bicara", "berhenti", "jeda", "lanjutkan", "riset volume", "riset pic", "reset red"'
                             : 'Say a command to control TTS',
                         style: TextStyle(fontSize: 16),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: bgColor),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Log Messages',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        for (var message in logMessages)
+                          Text(
+                            message,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),
