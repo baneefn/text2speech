@@ -163,7 +163,7 @@ class _TtsState extends State<Tts> {
         } else {
           addLog('Invalid pitch value');
         }
-      } else if (recognizedText.contains('reset rate')) {
+      } else if (recognizedText.contains('reset red')) {
         // corrected the command from "reset red" to "reset rate"
         double newRate = extractValue(recognizedText);
         if (newRate >= 0 && newRate <= 2) {
